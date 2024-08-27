@@ -3,6 +3,7 @@
 
 #include <string>
 #include "redismodule.h"
+#include "parse_utils.h"
 
 constexpr unsigned long DEFAULT_RETENTION = 1000 * 60 * 60 * 24 * 7; // Default retention 7 days
 constexpr bool DEFAULT_PARSE_FT_COMMANDS = true;
@@ -10,8 +11,9 @@ constexpr bool DEFAULT_PARSE_FT_COMMANDS = true;
 const std::string DEFAULT_CONFIG_FILE_NAME  = "view-server-config.ini";
 const std::string DEFAULT_CONFIG_SECTION  = "view-server";
 
-const std::string MONITORING_ENABLED_CONFIG  = "MONITORING_ENABLED";
 const std::string MONITORING_RETENTION_CONFIG = "MONITORING_RETENTION_HOURS";
+const std::string EXTRACT_FT_DATA = "IS_EXTRACT_FT_DATA";
+
 
 class Module_Config {
 public:

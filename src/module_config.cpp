@@ -48,5 +48,17 @@ void Module_Config::Read_Module_Config(RedisModuleCtx *ctx, const std::string& c
         } else {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [MONITORING_RETENTION_CONFIG] is not found in config file using default.");
         }
+
+        if(!config[DEFAULT_CONFIG_SECTION][EXTRACT_FT_DATA].empty() ) {
+            try{
+                const int monitoring_retention_hours = stringToBool(config[DEFAULT_CONFIG_SECTION][EXTRACT_FT_DATA]);
+                parse_ft_queries = monitoring_retention_hours * 60 * 60 * 1000;
+            } catch (std::invalid_argument const& _) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value " + EXTRACT_FT_DATA  + " has failed to read value.");
+            }
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [EXTRACT_FT_DATA] : " + std::to_string(parse_ft_queries));
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [EXTRACT_FT_DATA] is not found in config file using default.");
+        }
     }
 }

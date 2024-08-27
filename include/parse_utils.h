@@ -1,13 +1,13 @@
 #ifndef PARSE_UTILS_H
 #define PARSE_UTILS_H
 #include <string>
-#include <vector>
-#include <sstream>
 #include <iomanip>
-#include <unordered_map>
 #include <module_constants.h>
+#include "redismodule.h"
+#include <algorithm>
 
-std::vector<std::string> TokenizeCommandString(const std::string& command_str);
 std::string ParseFtCommand(const std::string& command);
+std::string concatenateArguments(RedisModuleString **argv, int argc);
+bool stringToBool(const std::string& str);
 
 #endif //PARSE_UTILS_H

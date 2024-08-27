@@ -1,60 +1,66 @@
 #include "opentrace_command_execute.h"
 
-int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
+int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, const int argc) {
     RedisModule_AutoMemory(ctx);
 
     const auto latency_metric_start = Get_Start_Time();
     const auto latency_metric_start_epoch = Get_Epoch_Time();
 
-    if (argc < 3) {
+    if (argc < 4) {
         return RedisModule_WrongArity(ctx);
     }
 
-    const RedisModuleString *command_str = argv[1];
-    const RedisModuleString *client_id_str = argv[2];
+    constexpr int client_id_idx = 1;
+    constexpr int cmd_delimiter_idx = client_id_idx + 1;
+    constexpr int cmd_idx = cmd_delimiter_idx + 1;
+    constexpr int cmd_args_idx = cmd_idx + 1;
+
+    if (RedisModule_StringPtrLen(argv[cmd_delimiter_idx], nullptr) != CMD_DELIMITER) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to execute command.");
+        return RedisModule_ReplyWithError(ctx, "Synthax exception. Expected TRACE.EXECUTE [client_id] CMD [**args]");
+    }
+
+    const RedisModuleString *client_id_str = argv[client_id_idx];
 
     std::string client_id = RedisModule_StringPtrLen(client_id_str, nullptr);
-
-    const std::string command_and_args = RedisModule_StringPtrLen(command_str, nullptr);
-
-    const std::vector<std::string> parsed_args = TokenizeCommandString(command_and_args);
-
-    if (parsed_args.empty()) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed, command parsing error.");
-        return RedisModule_ReplyWithError(ctx, "ERR Command parsing failed");
-    }
 
     std::string command_type = UNDEFINED_LABEL_VALUE;
     std::string index_name = UNDEFINED_LABEL_VALUE;
 
     const Module_Config &module_config = Module_Config::getInstance();
+    const std::string &redis_command = RedisModule_StringPtrLen(argv[cmd_idx], nullptr);
 
     if (module_config.Get_Parse_Ft_Queries()) {
-        const std::string &command = parsed_args[0];
-        const std::string ft_query_cmd = ParseFtCommand(command);
+        const std::string ft_query_cmd = ParseFtCommand(redis_command);
         if (!ft_query_cmd.empty()) {
-            if (parsed_args.size() > 1) {
-                index_name = parsed_args[1];  // Assuming the index name is the second argument
-            }
+            index_name = RedisModule_StringPtrLen(argv[cmd_args_idx], nullptr);  // Assuming the index name is the next argument
             command_type = ft_query_cmd;
         }
     }
 
-    std::vector<RedisModuleString*> redis_args;
-    for (const auto& arg : parsed_args) {
-        redis_args.push_back(RedisModule_CreateString(ctx, arg.c_str(), arg.size()));
+    RedisModuleCallReply *reply = RedisModule_Call(ctx, redis_command.c_str(), "v",
+        &argv[cmd_args_idx],
+        argc - cmd_args_idx);
+
+    if (reply == nullptr) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to execute command.");
+        return RedisModule_ReplyWithError(ctx, "TRACE command execution failed: NULL reply");
     }
 
-    RedisModuleCallReply *reply = RedisModule_Call(ctx, parsed_args[0].c_str(), "v", redis_args.data(), redis_args.size());
-    if (reply == nullptr || RedisModule_CallReplyType(reply) == REDISMODULE_REPLY_ERROR) {
+    if (RedisModule_CallReplyType(reply) == REDISMODULE_REPLY_ERROR) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to execute command.");
-        return RedisModule_ReplyWithError(ctx, "ERR Command execution failed");
+        size_t len;
+        const char *error_msg = RedisModule_CallReplyStringPtr(reply, &len);
+        return RedisModule_ReplyWithError(ctx, error_msg);
     }
+
+    const auto command_and_args = concatenateArguments(argv + cmd_idx, argc - cmd_idx);
 
     const std::vector<std::pair<std::string, std::string>> label_pairs = {
         {CLIENT_ID_LABEL_KEY, client_id},
         {COMMAND_TYPE_LABEL_KEY, command_type},
-        {INDEX_NAME_LABEL_KEY, index_name}
+        {INDEX_NAME_LABEL_KEY, index_name},
+        {COMMAND_TYPE_LABEL_KEY, command_and_args}
     };
 
     const auto latency_metric = Get_Delta_Time(latency_metric_start);
