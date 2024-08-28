@@ -112,6 +112,6 @@ Module configuration file is by default is in the same directory with binary. Yo
 Example format of the configuration :
 ```
 [redis-opentracing]
-IS_EXTRACT_FT_DATA = true
+IS_EXTRACT_FT_DATA = true | if true, the module will also add command_type and index_name labels
 MONITORING_RETENTION_HOURS = 24
 ```
