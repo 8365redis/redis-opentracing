@@ -54,7 +54,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
         return RedisModule_ReplyWithError(ctx, error_msg);
     }
 
-    const auto command_and_args = concatenateArguments(argv + cmd_idx, argc - cmd_idx);
+    const auto command_and_args = ConcatArgs(argv + cmd_idx, argc - cmd_idx);
 
     const std::vector<std::pair<std::string, std::string>> label_pairs = {
         {CLIENT_ID_LABEL_KEY, client_id},

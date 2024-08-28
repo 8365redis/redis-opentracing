@@ -3,7 +3,7 @@
 
 #include <string>
 #include "redismodule.h"
-#include "parse_utils.h"
+#include "misc_utils.h"
 
 constexpr unsigned long DEFAULT_RETENTION = 1000 * 60 * 60 * 24 * 7; // Default retention 7 days
 constexpr bool DEFAULT_PARSE_FT_COMMANDS = true;

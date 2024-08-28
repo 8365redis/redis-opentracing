@@ -4,7 +4,7 @@
 
 const std::string FT_SEARCH_CMD = "FT.SEARCH";
 const std::string FT_AGGREGATE_CMD = "FT.AGGREGATE";
-const std::string FT_TAGVALS_CMS = "FT.TAGVAlS";
+const std::string FT_TAGVALS_CMS = "FT.TAGVALS";
 
 const std::string CMD_DELIMITER = "CMD";
 

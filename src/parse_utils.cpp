@@ -1,6 +1,6 @@
 #include "parse_utils.h"
 
-std::string concatenateArguments(RedisModuleString **argv, int argc) {
+std::string ConcatArgs(RedisModuleString **argv, const int argc) {
     std::string result;
 
     for (int i = 0; i < argc; ++i) {
@@ -28,31 +28,15 @@ std::string ParseFtCommand(const std::string& command) {
 
     const auto ft_cmd = command.substr(3, command.size());
 
-    if (ft_cmd == ft_search_suffix) {
+    if (equalsIgnoreCase(ft_cmd, ft_search_suffix)) {
         return FT_SEARCH_CMD;
     }
-    if (ft_cmd == ft_aggregate_suffix) {
+    if (equalsIgnoreCase(ft_cmd, ft_aggregate_suffix)) {
         return FT_AGGREGATE_CMD;
     }
-    if (ft_cmd == ft_tagvals_suffix) {
+    if (equalsIgnoreCase(ft_cmd, ft_tagvals_suffix)) {
         return FT_TAGVALS_CMS;
     }
     return "";
-}
-
-bool stringToBool(const std::string& str) {
-    std::string lowerStr = str;
-    std::transform(lowerStr.begin(), lowerStr.end(), lowerStr.begin(),
-                   [](unsigned const char c) { return std::tolower(c);});
-
-    if (lowerStr == "true" || lowerStr == "1" || lowerStr == "yes" || lowerStr == "on") {
-        return true;
-    }
-
-    if (lowerStr == "false" || lowerStr == "0" || lowerStr == "no" || lowerStr == "off") {
-        return false;
-    }
-
-    throw std::invalid_argument("Invalid boolean string: " + str);
 }
 

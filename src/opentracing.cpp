@@ -43,10 +43,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     if (argc > 0) {
         config_file_path_str = RedisModule_StringPtrLen(argv[0], nullptr);
     }
-    #ifdef _DEBUG
-        config_file_path_str = "non-existing-file";
-    #endif
-        module_config.Read_Module_Config(ctx, config_file_path_str);
+
+    module_config.Read_Module_Config(ctx, config_file_path_str);
 
     return REDISMODULE_OK;
 }

@@ -51,8 +51,8 @@ void Module_Config::Read_Module_Config(RedisModuleCtx *ctx, const std::string& c
 
         if(!config[DEFAULT_CONFIG_SECTION][EXTRACT_FT_DATA].empty() ) {
             try{
-                const int monitoring_retention_hours = stringToBool(config[DEFAULT_CONFIG_SECTION][EXTRACT_FT_DATA]);
-                parse_ft_queries = monitoring_retention_hours * 60 * 60 * 1000;
+                const bool is_parse_ft_queries = stringToBool(config[DEFAULT_CONFIG_SECTION][EXTRACT_FT_DATA]);
+                parse_ft_queries = is_parse_ft_queries;
             } catch (std::invalid_argument const& _) {
                 LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value " + EXTRACT_FT_DATA  + " has failed to read value.");
             }
