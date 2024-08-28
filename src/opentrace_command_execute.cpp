@@ -60,7 +60,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
         {CLIENT_ID_LABEL_KEY, client_id},
         {COMMAND_TYPE_LABEL_KEY, command_type},
         {INDEX_NAME_LABEL_KEY, index_name},
-        {COMMAND_TYPE_LABEL_KEY, command_and_args}
+        {COMMAND_LABEL_KEY, command_and_args}
     };
 
     const auto latency_metric = Get_Delta_Time(latency_metric_start);
