@@ -107,7 +107,7 @@ pytest -rP python/tracing_tests.py
 or to run a specific test case you can run (example):
 
 ```
-pytest -rP python/tracing_tests.py::test_trace_ft_search_simple
+pytest -rP python/command_tracing_tests.py::test_trace_ft_search_simple
 ```
 
 ## API Contract
@@ -115,6 +115,19 @@ pytest -rP python/tracing_tests.py::test_trace_ft_search_simple
 ```
 TRACE.EXECUTE [client_id] CMD [**cmdargs]
 ```
+
+#### Limitations
+Due to the fact that characters: ",() are reserved by Redis TimeSeries in labels
+and they cannot be escaped we have to map them to other values when adding the command into the command label
+
+Transformations
+- ( => [op]
+- ) => [cp]
+- , => [c]
+- " => [q]
+
+e.g. command FT.SEARCH idx "(@fieldA:{x} @fieldB:y)"
+becomes FT.SEARCH idx [q][op]@fieldA:{x} @fieldB:y[cp][q]
 
 The module would create timeseries key in this format:
 ```

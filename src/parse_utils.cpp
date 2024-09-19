@@ -40,3 +40,27 @@ std::string ParseFtCommand(const std::string& command) {
     return "";
 }
 
+std::string& EscapeTSLabelValueInPlace(std::string& label_value) {
+    if (label_value.empty()) {
+        label_value = "\"\"";
+        return label_value;
+    }
+
+    label_value = std::regex_replace(label_value, std::regex("\""),
+        LABEL_QUOTE_REPLACEMENT);
+    label_value = std::regex_replace(label_value, std::regex("\\("),
+        LABEL_OPEN_PARANTHESIS_REPLACEMENT);
+    label_value = std::regex_replace(label_value, std::regex("\\)"),
+        LABEL_CLOSED_PARANTHESIS_REPLACEMENT);
+    label_value = std::regex_replace(label_value, std::regex(","),
+        LABEL_COMMA_REPLACEMENT);
+
+    return label_value;
+}
+
+std::string EscapeTSLabelValue(const std::string& label_value) {
+    std::string label_copy = label_value;
+    EscapeTSLabelValueInPlace(label_copy);
+    return label_copy;
+}
+
