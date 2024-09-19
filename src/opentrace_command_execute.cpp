@@ -57,10 +57,10 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
     const auto command_and_args = ConcatArgs(argv + cmd_idx, argc - cmd_idx);
 
     const std::vector<std::pair<std::string, std::string>> label_pairs = {
-        {CLIENT_ID_LABEL_KEY, client_id},
-        {COMMAND_TYPE_LABEL_KEY, command_type},
-        {INDEX_NAME_LABEL_KEY, index_name},
-        {COMMAND_LABEL_KEY, command_and_args}
+        {CLIENT_ID_LABEL_KEY, EscapeTSLabelValueInPlace(client_id)},
+        {COMMAND_TYPE_LABEL_KEY, EscapeTSLabelValueInPlace(command_type)},
+        {INDEX_NAME_LABEL_KEY, EscapeTSLabelValueInPlace(index_name)},
+        {COMMAND_LABEL_KEY, EscapeTSLabelValue(command_and_args)}
     };
 
     const auto latency_metric = Get_Delta_Time(latency_metric_start);

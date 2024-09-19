@@ -18,4 +18,9 @@ const std::string COMMAND_LABEL_KEY = "command";
 
 const std::string UNDEFINED_LABEL_VALUE = "undefined";
 
+const std::string LABEL_QUOTE_REPLACEMENT = "[q]";
+const std::string LABEL_COMMA_REPLACEMENT = "[c]";
+const std::string LABEL_OPEN_PARANTHESIS_REPLACEMENT = "[op]";
+const std::string LABEL_CLOSED_PARANTHESIS_REPLACEMENT = "[cp]";
+
 #endif //OPT_MODULE_CONSTANTS_H

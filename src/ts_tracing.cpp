@@ -57,7 +57,10 @@ bool Add_Metric(RedisModuleCtx *ctx,
 
     RedisModuleCallReply *ts_add_reply = RedisModule_Call(ctx, "TS.ADD", "v", new_argv, new_argc);
     if (RedisModule_CallReplyType(ts_add_reply) == REDISMODULE_REPLY_ERROR) {
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed");
+        size_t len;
+        const char *error_msg = RedisModule_CallReplyStringPtr(ts_add_reply, &len);
+        const std::string err_str(error_msg, len);
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed: " + err_str);
         return false;
     }
 
