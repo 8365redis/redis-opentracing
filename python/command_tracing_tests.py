@@ -118,10 +118,10 @@ def test_search_not_allowed_characters_ft_agg_query():
 
     # check response should be the same as with no trace
     command_args_trace = [
-        TRACE_EXECUTE_CMD,
-        client_id,
-        CMD_DELIM,
-    ] + command_args
+                             TRACE_EXECUTE_CMD,
+                             client_id,
+                             CMD_DELIM,
+                         ] + command_args
 
     response_with_trace = client.execute_command(*command_args_trace)
     assert response_no_trace == response_with_trace
