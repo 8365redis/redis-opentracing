@@ -40,27 +40,33 @@ std::string ParseFtCommand(const std::string& command) {
     return "";
 }
 
-std::string& EscapeTSLabelValueInPlace(std::string& label_value) {
+std::string EscapeTSLabelValue(const std::string& label_value) {
     if (label_value.empty()) {
-        label_value = "\"\"";
-        return label_value;
+        return "\"\"";
     }
 
-    label_value = std::regex_replace(label_value, std::regex("\""),
-        LABEL_QUOTE_REPLACEMENT);
-    label_value = std::regex_replace(label_value, std::regex("\\("),
-        LABEL_OPEN_PARANTHESIS_REPLACEMENT);
-    label_value = std::regex_replace(label_value, std::regex("\\)"),
-        LABEL_CLOSED_PARANTHESIS_REPLACEMENT);
-    label_value = std::regex_replace(label_value, std::regex(","),
-        LABEL_COMMA_REPLACEMENT);
+    std::string escaped_value;
+    escaped_value.reserve(label_value.size());
 
-    return label_value;
-}
+    for (const char it : label_value) {
+        switch (it) {
+            case '"':
+                escaped_value += LABEL_QUOTE_REPLACEMENT;
+                break;
+            case '(':
+                escaped_value += LABEL_OPEN_PARANTHESIS_REPLACEMENT;
+                break;
+            case ')':
+                escaped_value += LABEL_CLOSED_PARANTHESIS_REPLACEMENT;
+                break;
+            case ',':
+                escaped_value += LABEL_COMMA_REPLACEMENT;
+                break;
+            default:
+                escaped_value += it;
+        }
+    }
 
-std::string EscapeTSLabelValue(const std::string& label_value) {
-    std::string label_copy = label_value;
-    EscapeTSLabelValueInPlace(label_copy);
-    return label_copy;
+    return escaped_value;
 }
 
