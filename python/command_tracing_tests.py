@@ -1,11 +1,19 @@
 from redis.commands.json.path import Path
-
+import pytest
 from python import data_prepare
 from python.constants import TS_PREFIX, CMD_DELIM, TRACE_EXECUTE_CMD, COMMAND_LABEL_KEY, COMMAND_TYPE_LABEL_KEY, \
     CLIENT_ID_LABEL_KEY, RETENTION_LABEL_KEY, INDEX_NAME_LABEL_KEY
 from python.data_prepare import flush_db, extract_labels, TEST_INDEX_NAME
-from python.manage_redis import connect_redis_with_start, connect_redis
+from python.manage_redis import connect_redis_with_start, connect_redis, kill_redis
 from python.utils import escape_ts_label_value
+
+
+@pytest.fixture(autouse=True)
+def before_and_after_test():
+    print("Start")
+    yield
+    kill_redis()
+    print("End")
 
 
 def test_search_ft_search_query():

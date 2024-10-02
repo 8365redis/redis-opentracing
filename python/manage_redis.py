@@ -7,6 +7,7 @@ from constants import REMOTE_REDIS_CONNECTION
 
 def kill_redis():
     if not REMOTE_REDIS_CONNECTION:
+        print("test")
         bash_command = "redis-cli shutdown"
         subprocess.Popen(bash_command.split(),
                          stdin=subprocess.DEVNULL,

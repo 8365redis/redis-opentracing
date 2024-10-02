@@ -101,7 +101,7 @@ pip install -r python/requirements.txt
 To run a specific test file you can run (example):
 
 ```
-pytest -rP python/tracing_tests.py
+pytest -rP python/command_tracing_tests.py
 ```
 
 or to run a specific test case you can run (example):

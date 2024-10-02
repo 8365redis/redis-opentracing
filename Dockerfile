@@ -1,8 +1,15 @@
-FROM gcc:9 as builder
+FROM rockylinux:8.5 as builder
 
-RUN apt-get update && apt-get install -y \
-    make \
-    && rm -rf /var/lib/apt/lists/*
+RUN yum check-update || true && \
+    yum install -y make \
+                   gcc \
+                   epel-release \
+                   yum-utils
+
+RUN crb enable
+
+RUN yum install -y libmpc-devel
+RUN dnf group install -y "Development Tools"
 
 WORKDIR /usr/src/app
 
@@ -15,9 +22,11 @@ FROM redis/redis-stack:latest
 RUN apt-get update && apt-get install -y  \
     gdbserver \
     gdb  \
+    gcc \
     make  \
-    g++ \
-    cmake && rm -rf /var/lib/apt/lists/*
+    clang \
+    clang-tools \
+    cmake
 
 COPY --from=builder /usr/src/app/bin/redisopentracing.so /usr/local/lib/redis/modules/redisopentracing.so
 COPY --from=builder /usr/src/app/cfg/redis-opentracing-config.ini /usr/local/lib/redis/cfg/redis-opentracing-config.ini
