@@ -42,7 +42,10 @@ bool Add_Metric(RedisModuleCtx *ctx,
     }
 
     arguments_string_vector.emplace_back("RETENTION");
-    arguments_string_vector.push_back(std::to_string(module_config.Get_Monitoring_Retention()));
+    const auto retention = module_config.Get_Monitoring_Retention();
+    arguments_string_vector.push_back(std::to_string(retention));
+    arguments_string_vector.emplace_back("DUPLICATE_POLICY");
+    arguments_string_vector.emplace_back("LAST");
 
     std::string arguments_string_vector_str;
     for (const auto& str : arguments_string_vector) {
@@ -62,6 +65,13 @@ bool Add_Metric(RedisModuleCtx *ctx,
         const std::string err_str(error_msg, len);
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed: " + err_str);
         return false;
+    }
+
+    RedisModuleString *ts_key_str = RedisModule_CreateString(ctx, metric_name.c_str(),
+        metric_name.length());
+    RedisModuleKey *ts_key = RedisModule_OpenKey(ctx, ts_key_str, REDISMODULE_WRITE);
+    if(RedisModule_SetExpire(ts_key, static_cast<mstime_t>(retention)) != REDISMODULE_OK){
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Set key TTL failed for key: " + metric_name);
     }
 
     return true;
