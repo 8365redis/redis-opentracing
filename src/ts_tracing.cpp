@@ -1,78 +1,56 @@
 #include "ts_tracing.h"
 #include "module_config.h"
 #include "logger.h"
+#include "json/json.hpp"
 
 #include <iostream>
 
-bool Add_Metric(RedisModuleCtx *ctx,
-                const unsigned long long metric_ts,
-                const std::string& metric_name,
-                const std::string& metric_value,
-                const std::vector<std::pair<std::string,std::string>>& label_pairs) {
+bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, std::string name, double value, std::string value_type, std::string module, std::string version, std::string command, const std::map<std::string, std::string>& tags)
+ {
     if(ctx == nullptr) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed , context is invalid.");
         return false;
     }
 
-    if(metric_name.empty() || metric_value.empty()) {
+    if(name.empty() || value <= 0) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed , metric name or value can not be empty.");
         return false;
     }
 
-    const Module_Config &module_config = Module_Config::getInstance();
-
-    std::vector<std::string> arguments_string_vector;
-    arguments_string_vector.push_back(metric_name);
-    arguments_string_vector.push_back(std::to_string(metric_ts));
-    arguments_string_vector.push_back(metric_value);
-
-    if(!label_pairs.empty()) {
-        arguments_string_vector.emplace_back("LABELS");
+    // Create the JSON metric object
+    nlohmann::json metric;
+    metric[METRIC_VERSION_KEY] = version;
+    metric[METRIC_TS_KEY] = metric_ts;
+    metric[METRIC_MODULE_KEY] = module;
+    metric[COMMAND_KEY] = command;
+    // Insert the provided tags into the metric JSON under METRIC_TAGS_KEY
+    for (const auto& tag : tags) {
+        metric[METRIC_TAGS_KEY][tag.first] = tag.second;
     }
-    bool added_at_least_one_label = false;
-    for (const auto& pair : label_pairs) {
-        if (!pair.first.empty() && !pair.second.empty()) {
-            arguments_string_vector.push_back(pair.first);
-            arguments_string_vector.push_back(pair.second);
-            added_at_least_one_label = true;
-        }
-    }
-    if(!added_at_least_one_label && !label_pairs.empty()) { // Remove added "LABELS" if no label is added
-        arguments_string_vector.pop_back();
-    }
+    // Add metric data
+    metric[METRIC_METRIC_KEY][METRIC_NAME_KEY] = name;
+    metric[METRIC_METRIC_KEY][METRIC_VALUE_KEY] = value;
+    metric[METRIC_METRIC_KEY][METRIC_VALUE_TYPE_KEY] = value_type;
+    std::string metric_str = metric.dump();
 
-    arguments_string_vector.emplace_back("RETENTION");
-    const auto retention = module_config.Get_Monitoring_Retention();
-    arguments_string_vector.push_back(std::to_string(retention));
-    arguments_string_vector.emplace_back("DUPLICATE_POLICY");
-    arguments_string_vector.emplace_back("LAST");
+    const int stream_write_size_total = 2; // metric name + metric data
+    RedisModuleString* stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
+    RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, stream_name, REDISMODULE_WRITE);
+    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * stream_write_size_total);
 
-    std::string arguments_string_vector_str;
-    for (const auto& str : arguments_string_vector) {
-        arguments_string_vector_str += str + " ";
-    }
+    xadd_params[0] = RedisModule_CreateString(ctx, OPENTRACING_METRIC_KEY_NAME.c_str(), OPENTRACING_METRIC_KEY_NAME.length());
+    xadd_params[1] = RedisModule_CreateString(ctx, metric_str.c_str(), metric_str.length());
 
-    const int new_argc = arguments_string_vector.size(); // NOLINT(*-narrowing-conversions)
-    auto **new_argv = static_cast<RedisModuleString **>(RedisModule_Alloc(sizeof(RedisModuleString *) * new_argc));
-    for (int i = 0; i < new_argc; ++i) {
-        new_argv[i] = RedisModule_CreateString(ctx, arguments_string_vector[i].c_str(), arguments_string_vector[i].size());
-    }
-
-    RedisModuleCallReply *ts_add_reply = RedisModule_Call(ctx, "TS.ADD", "v", new_argv, new_argc);
-    if (RedisModule_CallReplyType(ts_add_reply) == REDISMODULE_REPLY_ERROR) {
-        size_t len;
-        const char *error_msg = RedisModule_CallReplyStringPtr(ts_add_reply, &len);
-        const std::string err_str(error_msg, len);
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed: " + err_str);
+    int stream_add_resp = RedisModule_StreamAdd( stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, stream_write_size_total/2);
+    if (stream_add_resp != REDISMODULE_OK) {
+        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed to add to the stream.");
         return false;
     }
 
-    RedisModuleString *ts_key_str = RedisModule_CreateString(ctx, metric_name.c_str(),
-        metric_name.length());
-    RedisModuleKey *ts_key = RedisModule_OpenKey(ctx, ts_key_str, REDISMODULE_WRITE);
-    if(RedisModule_SetExpire(ts_key, static_cast<mstime_t>(retention)) != REDISMODULE_OK){
-        LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Set key TTL failed for key: " + metric_name);
-    }
+    Module_Config &module_config = Module_Config::getInstance();
+    RedisModuleString* mon_stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
+    RedisModuleKey *mon_stream_key = RedisModule_OpenKey(ctx, mon_stream_name, REDISMODULE_WRITE);
+    RedisModule_StreamTrimByLength(mon_stream_key, REDISMODULE_STREAM_TRIM_APPROX, module_config.Get_Monitoring_Stream_Cap());
 
     return true;
 }

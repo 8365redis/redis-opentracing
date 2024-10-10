@@ -7,7 +7,6 @@ from constants import REMOTE_REDIS_CONNECTION
 
 def kill_redis():
     if not REMOTE_REDIS_CONNECTION:
-        print("test")
         bash_command = "redis-cli shutdown"
         subprocess.Popen(bash_command.split(),
                          stdin=subprocess.DEVNULL,
@@ -20,7 +19,7 @@ def kill_redis():
 def start_redis():
     if not REMOTE_REDIS_CONNECTION:
         current_working_directory = os.getcwd()
-        module = current_working_directory + "/bin/cct.so"
+        module = current_working_directory + "/bin/redisopentracing.so"
         bash_command = "redis-stack-server --loadmodule " + module
         subprocess.Popen(bash_command.split(),
                          stdin=subprocess.DEVNULL,

@@ -58,24 +58,18 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
 
     const auto escaped_command_and_args = EscapeTSLabelValue(command_and_args);
     const auto escaped_client_id = EscapeTSLabelValue(client_id);
-
-    const std::vector<std::pair<std::string, std::string>> label_pairs = {
-        {CLIENT_ID_LABEL_KEY, client_id},
-        {COMMAND_TYPE_LABEL_KEY, command_type},
-        {INDEX_NAME_LABEL_KEY, index_name},
-        {COMMAND_LABEL_KEY, escaped_command_and_args}
-    };
-
     const auto latency_metric = Get_Delta_Time(latency_metric_start);
-    const bool metric_added = Add_Metric(ctx, latency_metric_start_epoch,
-        (TS_PREFIX + client_id + TS_DELIMITER + command_and_args),
-        std::to_string(latency_metric),
-        label_pairs);
+
+    std::map<std::string, std::string> tags = {
+        {CLIENT_KEY, escaped_client_id},
+        {INDEX_NAME_KEY, index_name},
+        {COMMAND_TYPE_KEY, command_type}
+    };
+    bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, MODULE_VERSION, escaped_command_and_args, tags);
+
     if (!metric_added) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to add metric.");
     }
 
     return RedisModule_ReplyWithCallReply(ctx, reply);
 }
-
-
