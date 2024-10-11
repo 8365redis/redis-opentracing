@@ -195,10 +195,10 @@ def test_json_get():
 
     # CHECK MONITORING STREAM
     from_stream = client.xread( streams={OPENTRACING_STREAM_NAME:0} )
-    print(from_stream)
+    #print(from_stream)
     json_data = str(from_stream[0][1][0][1][OPENTRACING_KEY_NAME])
     d = json.loads(json_data)
-    print(json_data)
+    #print(json_data)
     assert d[COMMAND_LABEL_KEY] == '''JSON.GET users:1'''
     assert d[METRIC_TAGS_KEY][CLIENT_ID_LABEL_KEY] == '''test_search_latency_metric_is_added'''
     assert d[METRIC_TAGS_KEY][COMMAND_TYPE_LABEL_KEY] == '''undefined'''

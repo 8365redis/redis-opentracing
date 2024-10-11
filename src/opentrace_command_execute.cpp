@@ -1,10 +1,11 @@
 #include "opentrace_command_execute.h"
+#include "version.h"
 
 int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, const int argc) {
     RedisModule_AutoMemory(ctx);
 
-    const auto latency_metric_start = Get_Start_Time();
-    const auto latency_metric_start_epoch = Get_Epoch_Time();
+    //const auto latency_metric_start = Get_Start_Time();
+    //const auto latency_metric_start_epoch = Get_Epoch_Time();
 
     if (argc < 4) {
         return RedisModule_WrongArity(ctx);
@@ -54,6 +55,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
         return RedisModule_ReplyWithError(ctx, error_msg);
     }
 
+    /*
     const auto command_and_args = ConcatArgs(argv + cmd_idx, argc - cmd_idx);
 
     const auto escaped_command_and_args = EscapeTSLabelValue(command_and_args);
@@ -65,11 +67,13 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
         {INDEX_NAME_KEY, index_name},
         {COMMAND_TYPE_KEY, command_type}
     };
-    bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, MODULE_VERSION, escaped_command_and_args, tags);
+    std::string module_version = VersionManager::GetInstance().Get_Module_Version_Str();
+    bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, module_version, escaped_command_and_args, tags);
 
     if (!metric_added) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to add metric.");
     }
+    */
 
     return RedisModule_ReplyWithCallReply(ctx, reply);
 }

@@ -27,7 +27,6 @@ const std::string METRIC_VERSION_KEY = "version";
 const std::string METRIC_MODULE_KEY = "module";
 const std::string CLIENT_KEY = "client_id";
 const std::string MODULE_NAME = "tracing";
-const std::string MODULE_VERSION = "1.0.0";
 
 
 bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, std::string name, double value, std::string value_type, std::string module, std::string version, std::string command, const std::map<std::string, std::string>& tags);

@@ -1,6 +1,7 @@
 #include "redismodule.h"
 #include "logger.h"
 #include "module_config.h"
+#include "version.h"
 
 #include "opentrace_command_execute.h"
 
@@ -12,14 +13,13 @@
 extern "C" {
 #endif
 
-
-RedisModuleCtx *rdts_staticCtx;
-
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
     
     if (RedisModule_Init(ctx,"OPENTRACING",1,REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
     }
+
+    VersionManager::GetInstance().Set_Module_Version(OPENTRACING_MODULE_VERSION);
     
     const char* version_string = { OPENTRACING_MODULE_VERSION " compiled at " __TIME__ " "  __DATE__  };
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "OPENTRACING_MODULE_VERSION : " + std::string(version_string));
@@ -30,8 +30,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     #ifdef NDEBUG
     LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "THIS IS A RELEASE BUILD." );
     #endif
-
-    rdts_staticCtx = RedisModule_GetDetachedThreadSafeContext(ctx);
 
     if (RedisModule_CreateCommand(ctx,"TRACE.EXECUTE", TRACE_Execute_RedisCommand , "admin write", 0, 0, 0) == REDISMODULE_ERR) {
         return REDISMODULE_ERR;
