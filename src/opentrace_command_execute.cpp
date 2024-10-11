@@ -57,18 +57,16 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
 
     
     const auto command_and_args = ConcatArgs(argv + cmd_idx, argc - cmd_idx);
-
-    const auto escaped_command_and_args = EscapeTSLabelValue(command_and_args);
-    const auto escaped_client_id = EscapeTSLabelValue(client_id);
     const auto latency_metric = Get_Delta_Time(latency_metric_start);
 
     std::map<std::string, std::string> tags = {
-        {CLIENT_KEY, escaped_client_id},
+        {CLIENT_KEY, client_id},
         {INDEX_NAME_KEY, index_name},
         {COMMAND_TYPE_KEY, command_type}
     };
+
     std::string module_version = VersionManager::GetInstance().Get_Module_Version_Str();
-    bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, module_version, escaped_command_and_args, tags);
+    bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, module_version, command_and_args, tags);
 
     if (!metric_added) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to add metric.");
