@@ -4,8 +4,8 @@
 int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, const int argc) {
     RedisModule_AutoMemory(ctx);
 
-    //const auto latency_metric_start = Get_Start_Time();
-    //const auto latency_metric_start_epoch = Get_Epoch_Time();
+    const auto latency_metric_start = Get_Start_Time();
+    const auto latency_metric_start_epoch = Get_Epoch_Time();
 
     if (argc < 4) {
         return RedisModule_WrongArity(ctx);
@@ -55,7 +55,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
         return RedisModule_ReplyWithError(ctx, error_msg);
     }
 
-    /*
+    
     const auto command_and_args = ConcatArgs(argv + cmd_idx, argc - cmd_idx);
 
     const auto escaped_command_and_args = EscapeTSLabelValue(command_and_args);
@@ -73,7 +73,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
     if (!metric_added) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to add metric.");
     }
-    */
+    
 
     return RedisModule_ReplyWithCallReply(ctx, reply);
 }
