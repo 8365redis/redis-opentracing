@@ -135,7 +135,7 @@ def test_search_not_allowed_characters_ft_agg_query():
     json_data = str(from_stream[0][1][0][1][OPENTRACING_KEY_NAME])
     d = json.loads(json_data)
     #print(json_data)
-    assert d[COMMAND_LABEL_KEY] == '''FT.AGGREGATE usersJsonIdx [op]@User\\.PASSPORT:{aaa}[cp] | [op]@User\\.PASSPORT:{aaa}[cp] GROUPBY 2 @User.ID @User.PASSPORT LIMIT 0 3'''
+    assert d[COMMAND_LABEL_KEY] == '''FT.AGGREGATE usersJsonIdx (@User\\.PASSPORT:{aaa}) | (@User\\.PASSPORT:{aaa}) GROUPBY 2 @User.ID @User.PASSPORT LIMIT 0 3'''
     assert d[METRIC_TAGS_KEY][CLIENT_ID_LABEL_KEY] == '''test_search_latency_metric_is_added'''
     assert d[METRIC_TAGS_KEY][COMMAND_TYPE_LABEL_KEY] == '''FT.AGGREGATE'''
     assert d[METRIC_TAGS_KEY][INDEX_NAME_LABEL_KEY] == '''usersJsonIdx'''

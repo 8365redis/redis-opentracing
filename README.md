@@ -116,28 +116,37 @@ pytest -rP python/command_tracing_tests.py::test_trace_ft_search_simple
 TRACE.EXECUTE [client_id] CMD [**cmdargs]
 ```
 
-#### Limitations
-Due to the fact that characters: ",() are reserved by Redis TimeSeries in labels
-and they cannot be escaped we have to map them to other values when adding the command into the command label
-
-Transformations
-- ( => [op]
-- ) => [cp]
-- , => [c]
-- " => [q]
-
-e.g. command FT.SEARCH idx "(@fieldA:{x} @fieldB:y)"
-becomes FT.SEARCH idx [q][op]@fieldA:{x} @fieldB:y[cp][q]
-
-The module would create timeseries key in this format:
+The module would create stream key in this format:
 ```
-OPENTRACING:{client_id}:{**cmdargs}
+OPENTRACING
 ```
-with labels:
-* client_id
-* command_type (only added if (FT.SEARCH | FT.AGGREGATE | FT.TAGVALS) command, default undefined)
-* index_name (only added if (FT.SEARCH | FT.AGGREGATE | FT.TAGVALS) command, default undefined)
-* command
+with values:
+```
+[
+  ['OPENTRACING', [
+    ('1728652869653-0', {
+      'TRACING': '{
+        "command":"JSON.GET users:1",
+        "metric":{
+          "name":"latency",
+          "value":17416.0,
+          "value_type":"ns"
+        },
+        "module":"tracing",
+        "tags":{
+          "client_id":"test_search_latency_metric_is_added,
+          "command_type":"undefined",
+          "index_name":"undefined"
+          
+        },
+        "timestamp":1728652869653,
+        "version":"1.0.0"
+      }'
+    }
+    )]
+  ]
+]
+```
 
 ## Configuration
 Module configuration file is by default is in the same directory with binary. You can also set a specific directory or name for the configuration file with passing configuration file as a parameter to module (full path).
