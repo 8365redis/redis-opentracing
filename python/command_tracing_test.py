@@ -42,8 +42,9 @@ def test_search_ft_search_query():
 
     # CHECK MONITORING STREAM
     from_stream = client.xread( streams={OPENTRACING_STREAM_NAME:0} )
-    #print(from_stream)
-    json_data = str(from_stream[0][1][0][1][OPENTRACING_KEY_NAME])
+    print(str(from_stream))
+    json_data = from_stream[0][1][0][1][OPENTRACING_KEY_NAME]
+    print(json_data)
     d = json.loads(json_data)
     #print(json_data)
     assert d[COMMAND_LABEL_KEY] == '''FT.SEARCH usersJsonIdx @User\\.PASSPORT:{aaa} RETURN 1 User.ID SORTBY User.ID LIMIT 0 3'''

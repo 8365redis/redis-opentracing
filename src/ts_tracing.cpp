@@ -4,9 +4,16 @@
 #include "json/json.hpp"
 
 #include <iostream>
+#include <sstream>
+
+const int TRIM_BUFFER_SIZE = 10000;
 
 bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, std::string name, double value, std::string value_type, std::string module, std::string version, std::string command, const std::map<std::string, std::string>& tags)
  {
+    static int trim_counter = 0;
+    static int metric_push_counter = 0;
+    trim_counter++;
+    metric_push_counter++;
     if(ctx == nullptr) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Add_Metric failed , context is invalid.");
         return false;
@@ -17,21 +24,38 @@ bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, std::string n
         return false;
     }
 
-    // Create the JSON metric object
-    nlohmann::json metric;
-    metric[METRIC_VERSION_KEY] = version;
-    metric[METRIC_TS_KEY] = metric_ts;
-    metric[METRIC_MODULE_KEY] = module;
-    metric[COMMAND_KEY] = command;
-    // Insert the provided tags into the metric JSON under METRIC_TAGS_KEY
-    for (const auto& tag : tags) {
-        metric[METRIC_TAGS_KEY][tag.first] = tag.second;
+    std::stringstream json;
+    // Open the JSON object
+    json << "{";
+
+    // Add basic metric fields (version, timestamp, module, command)
+    json << "\"" << METRIC_VERSION_KEY << "\":\"" << version << "\",";
+    json << "\"" << METRIC_TS_KEY << "\":" << std::to_string(metric_ts) << ",";
+    json << "\"" << METRIC_MODULE_KEY << "\":\"" << module << "\",";
+    json << "\"" << COMMAND_KEY << "\":\"" << command << "\",";
+
+    // Add tags as an object inside the metric
+    json << "\"" << METRIC_TAGS_KEY << "\":{";
+    for (auto it = tags.begin(); it != tags.end(); ++it) {
+        json << "\"" << it->first << "\":\"" << it->second << "\"";
+        if (std::next(it) != tags.end()) {
+            json << ",";  // Add a comma if it's not the last element
+        }
     }
-    // Add metric data
-    metric[METRIC_METRIC_KEY][METRIC_NAME_KEY] = name;
-    metric[METRIC_METRIC_KEY][METRIC_VALUE_KEY] = value;
-    metric[METRIC_METRIC_KEY][METRIC_VALUE_TYPE_KEY] = value_type;
-    std::string metric_str = metric.dump();
+    json << "},";  // End of tags
+
+    // Add metric data (name, value, value_type)
+    json << "\"" << METRIC_METRIC_KEY << "\":{";
+    json << "\"" << METRIC_NAME_KEY << "\":\"" << name << "\",";
+    json << "\"" << METRIC_VALUE_KEY << "\":" << std::to_string(value) << ",";
+    json << "\"" << METRIC_VALUE_TYPE_KEY << "\":\"" << value_type << "\"";
+    json << "}";  // End of metric object
+
+    // Close the JSON object
+    json << "}";
+
+
+    std::string metric_str = json.str();
 
     const int stream_write_size_total = 2; // metric name + metric data
     RedisModuleString* stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
@@ -47,10 +71,13 @@ bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, std::string n
         return false;
     }
 
-    Module_Config &module_config = Module_Config::getInstance();
-    RedisModuleString* mon_stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
-    RedisModuleKey *mon_stream_key = RedisModule_OpenKey(ctx, mon_stream_name, REDISMODULE_WRITE);
-    RedisModule_StreamTrimByLength(mon_stream_key, REDISMODULE_STREAM_TRIM_APPROX, module_config.Get_Monitoring_Stream_Cap());
+    if(trim_counter > TRIM_BUFFER_SIZE) {
+        Module_Config &module_config = Module_Config::getInstance();
+        RedisModuleString* mon_stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
+        RedisModuleKey *mon_stream_key = RedisModule_OpenKey(ctx, mon_stream_name, REDISMODULE_WRITE);
+        RedisModule_StreamTrimByLength(mon_stream_key, REDISMODULE_STREAM_TRIM_APPROX, module_config.Get_Monitoring_Stream_Cap());
+        trim_counter = 0;
+    }
 
     return true;
 }

@@ -67,11 +67,10 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, co
 
     std::string module_version = VersionManager::GetInstance().Get_Module_Version_Str();
     bool metric_added = Add_Metric(ctx, latency_metric_start_epoch, METRIC_NAME_LATENCY, latency_metric, METRIC_VALUE_TYPE_NS, MODULE_NAME, module_version, command_and_args, tags);
-
+ 
     if (!metric_added) {
         LOG(ctx, REDISMODULE_LOGLEVEL_WARNING, "TRACE_Execute_RedisCommand failed to add metric.");
     }
     
-
     return RedisModule_ReplyWithCallReply(ctx, reply);
 }
