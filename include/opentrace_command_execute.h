@@ -6,7 +6,7 @@
 #include "module_config.h"
 #include "parse_utils.h"
 #include <algorithm>
-#include "ts_tracing.h"
+#include "monitoring.h"
 #include "logger.h"
 
 int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, int argc);
