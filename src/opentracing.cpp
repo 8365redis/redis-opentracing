@@ -2,6 +2,7 @@
 #include "logger.h"
 #include "module_config.h"
 #include "version.h"
+#include "monitoring_manager.h"
 
 #include "opentrace_command_execute.h"
 
@@ -42,7 +43,12 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         config_file_path_str = RedisModule_StringPtrLen(argv[0], nullptr);
     }
 
+
     module_config.Read_Module_Config(ctx, config_file_path_str);
+    auto logger_lambda = [](RedisModuleCtx* ctx, const char* level, const std::string& message) {
+        LOG(ctx, level, message);
+    };
+    Monitoring_Manager::Get_Instance().Init(module_config.Get_Monitoring_Stream_Cap(), logger_lambda);
 
     return REDISMODULE_OK;
 }
