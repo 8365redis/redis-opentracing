@@ -2,7 +2,85 @@
 #include <iostream>
 #include <sstream>
 
+#include "json/json.hpp"
+
 const int TRIM_BUFFER_SIZE = 10000;
+
+// Helper function to escape special characters in JSON strings
+std::string Escape_Json_String(const std::string& input) {
+    std::string output;
+    output.reserve(input.size());
+
+    for (const char c : input) {
+        switch (c) {
+            case '\"': output += "\\\""; break;
+            case '\\': output += "\\\\"; break;
+            case '\b': output += "\\b";  break;
+            case '\f': output += "\\f";  break;
+            case '\n': output += "\\n";  break;
+            case '\r': output += "\\r";  break;
+            case '\t': output += "\\t";  break;
+            default : output += c; break;
+        }
+    }
+
+    return output;
+}
+
+std::string Create_Metric_Json_String_Stream(
+    const std::string& version,
+    long long metric_ts,
+    const std::string& module,
+    const std::string& command,
+    const std::map<std::string, std::string>& tags,
+    const std::string& name,
+    double value,
+    const std::string& value_type
+) {
+    // Estimate the size to reserve to reduce reallocations
+    std::string json;
+    json.reserve(10240);  // Adjust based on expected size
+
+    json += '{';
+
+    // Add basic metric fields (version, timestamp, module, command)
+    json += '"'; json += METRIC_VERSION_KEY; json += "\":\""; json += Escape_Json_String(version); json += "\",";
+    json += '"'; json += METRIC_TS_KEY;      json += "\":";
+
+    json += std::to_string(metric_ts);
+
+    json += ',';
+
+    json += '"'; json += METRIC_MODULE_KEY; json += "\":\""; json += Escape_Json_String(module); json += "\",";
+    json += '"'; json += COMMAND_KEY;       json += "\":\""; json += Escape_Json_String(command); json += "\",";
+
+    // Add tags
+    json += '"'; json += METRIC_TAGS_KEY; json += "\":{";
+    for (auto it = tags.begin(); it != tags.end(); ++it) {
+        json += '"'; json += Escape_Json_String(it->first); json += "\":\""; json += Escape_Json_String(it->second); json += '"';
+        if (std::next(it) != tags.end()) {
+            json += ',';
+        }
+    }
+    json += "},";
+
+    // Add metric data
+    json += '"'; json += METRIC_METRIC_KEY; json += "\":{";
+    json += '"'; json += METRIC_NAME_KEY;   json += "\":\""; json += Escape_Json_String(name); json += "\",";
+    json += '"'; json += METRIC_VALUE_KEY;  json += "\":";
+
+    json += std::to_string(value);
+
+    json += ',';
+
+    json += '"'; json += METRIC_VALUE_TYPE_KEY; json += "\":\""; json += Escape_Json_String(value_type); json += '"';
+    json += '}';  // Close metric object
+
+    json += '}';  // Close JSON object
+
+    return json;
+
+}
 
 Monitoring_Manager& Monitoring_Manager::Get_Instance() {
     static Monitoring_Manager instance;
@@ -27,37 +105,8 @@ bool Monitoring_Manager::Add_Metric(RedisModuleCtx *ctx, unsigned long long metr
         return false;
     }
 
-    std::stringstream json;
-    // Open the JSON object
-    json << "{";
-
-    // Add basic metric fields (version, timestamp, module, command)
-    json << "\"" << METRIC_VERSION_KEY << "\":\"" << version << "\",";
-    json << "\"" << METRIC_TS_KEY << "\":" << std::to_string(metric_ts) << ",";
-    json << "\"" << METRIC_MODULE_KEY << "\":\"" << module << "\",";
-    json << "\"" << COMMAND_KEY << "\":\"" << command << "\",";
-
-    // Add tags as an object inside the metric
-    json << "\"" << METRIC_TAGS_KEY << "\":{";
-    for (auto it = tags.begin(); it != tags.end(); ++it) {
-        json << "\"" << it->first << "\":\"" << it->second << "\"";
-        if (std::next(it) != tags.end()) {
-            json << ",";  // Add a comma if it's not the last element
-        }
-    }
-    json << "},";  // End of tags
-
-    // Add metric data (name, value, value_type)
-    json << "\"" << METRIC_METRIC_KEY << "\":{";
-    json << "\"" << METRIC_NAME_KEY << "\":\"" << name << "\",";
-    json << "\"" << METRIC_VALUE_KEY << "\":" << std::to_string(value) << ",";
-    json << "\"" << METRIC_VALUE_TYPE_KEY << "\":\"" << value_type << "\"";
-    json << "}";  // End of metric object
-
-    // Close the JSON object
-    json << "}";
-
-    std::string metric_str = json.str();
+    // Generate the JSON string using the function
+    std::string metric_str = Create_Metric_Json_String_Stream(version, metric_ts, module, command, tags, name, value, value_type);
 
     const int stream_write_size_total = 2; // metric name + metric data
     RedisModuleString* stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());

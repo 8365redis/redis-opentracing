@@ -14,13 +14,13 @@ def test_monitoring_latency():
     producer = connect_redis_with_start()
     flush_db(producer) # clean all db first
     create_index(producer)
-    time.sleep(5)
+    time.sleep(2)
 
     producer.execute_command("FT.CONFIG SET MAXSEARCHRESULTS 1000000")
     producer.execute_command("FT.CONFIG SET MAXAGGREGATERESULTS 1000000")
 
     print("Test starts")
-    total = 10000
+    total = 1000
     #ADD INITIAL DATA
     for i in range(total):
         passport = "aaa"
@@ -34,7 +34,7 @@ def test_monitoring_latency():
 
     print("Adding data finished")
 
-    time.sleep(5)
+    time.sleep(2)
 
     latency_values = []
     query_cnt = 200
@@ -55,13 +55,12 @@ def test_monitoring_latency():
         total_query += 1
 
 
-    time.sleep(3)
+    time.sleep(1)
 
 
     max_value = np.max(latency_values)
     min_value = np.min(latency_values)
     mean_value = np.mean(latency_values)  # Mean and average are the same in this context
-    average_value = np.mean(latency_values)
     p50 = np.percentile(latency_values, 50)  # 50th percentile (median)
     p99 = np.percentile(latency_values, 99)  # 99th percentile
     p999 = np.percentile(latency_values, 99.9)  # 99.9th percentile
@@ -73,7 +72,6 @@ def test_monitoring_latency():
     print(f"Max: {max_value}")
     print(f"Min: {min_value}")
     print(f"Mean: {mean_value}")
-    print(f"Average: {average_value}")
     print(f"P50 (Median): {p50}")
     print(f"P99: {p99}")
     print(f"P99.9: {p999}")
@@ -81,8 +79,9 @@ def test_monitoring_latency():
     print(client.execute_command("INFO latencystats"))
 
 
-    '''
-    time.sleep(2)
+    time.sleep(1)
+
+    print("#########################################################################")
     
     latency_values.clear()
 
@@ -97,7 +96,6 @@ def test_monitoring_latency():
     max_value = np.max(latency_values)
     min_value = np.min(latency_values)
     mean_value = np.mean(latency_values)  # Mean and average are the same in this context
-    average_value = np.mean(latency_values)
     p50 = np.percentile(latency_values, 50)  # 50th percentile (median)
     p99 = np.percentile(latency_values, 99)  # 99th percentile
     p999 = np.percentile(latency_values, 99.9)  # 99.9th percentile
@@ -109,11 +107,10 @@ def test_monitoring_latency():
     print(f"Max: {max_value}")
     print(f"Min: {min_value}")
     print(f"Mean: {mean_value}")
-    print(f"Average: {average_value}")
     print(f"P50 (Median): {p50}")
     print(f"P99: {p99}")
     print(f"P99.9: {p999}")
-    '''
+    
     
     kill_redis()
 

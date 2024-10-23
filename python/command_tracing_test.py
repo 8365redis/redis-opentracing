@@ -45,12 +45,12 @@ def test_search_ft_search_query():
     print(str(from_stream))
     json_data = from_stream[0][1][0][1][OPENTRACING_KEY_NAME]
     print(json_data)
-    #d = json.loads(json_data)
+    d = json.loads(json_data)
     print(json_data)
-    #assert d[COMMAND_LABEL_KEY] == '''FT.SEARCH usersJsonIdx @User\\.PASSPORT:{aaa} RETURN 1 User.ID SORTBY User.ID LIMIT 0 3'''
-    #assert d[METRIC_TAGS_KEY][CLIENT_ID_LABEL_KEY] == '''test_search_latency_metric_is_added'''
-    #assert d[METRIC_TAGS_KEY][COMMAND_TYPE_LABEL_KEY] == '''FT.SEARCH'''
-    #assert d[METRIC_TAGS_KEY][INDEX_NAME_LABEL_KEY] == '''usersJsonIdx'''
+    assert d[COMMAND_LABEL_KEY] == '''FT.SEARCH usersJsonIdx @User\\.PASSPORT:{aaa} RETURN 1 User.ID SORTBY User.ID LIMIT 0 3'''
+    assert d[METRIC_TAGS_KEY][CLIENT_ID_LABEL_KEY] == '''test_search_latency_metric_is_added'''
+    assert d[METRIC_TAGS_KEY][COMMAND_TYPE_LABEL_KEY] == '''FT.SEARCH'''
+    assert d[METRIC_TAGS_KEY][INDEX_NAME_LABEL_KEY] == '''usersJsonIdx'''
 
 
 def test_search_ft_agg_query():
