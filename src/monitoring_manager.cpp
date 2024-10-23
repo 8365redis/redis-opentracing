@@ -129,7 +129,6 @@ bool Monitoring_Manager::Add_Metric(RedisModuleCtx *ctx, unsigned long long metr
         RedisModule_StreamTrimByLength(mon_stream_key, REDISMODULE_STREAM_TRIM_APPROX, monitoring_stream_cap);
         trim_counter = 0;
     }
-    logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Add_Metric has successfully added the metric.");
     return true;
 }
 
