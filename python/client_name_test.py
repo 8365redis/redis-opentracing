@@ -46,7 +46,7 @@ def test_search_ft_search_query_with_client_name():
     assert response_no_trace == response_with_trace
 
 
-@pytest.mark.skipif(False ,
+@pytest.mark.skipif(True ,
                     reason="Need to be run manually after both CCT2 and opentracing module are loaded")
 def test_search_ft_search_query_with_client_name_update():
     producer = connect_redis()
