@@ -16,30 +16,6 @@ std::string ConcatArgs(RedisModuleString **argv, const int argc) {
     return result;
 }
 
-std::string ParseFtCommand(const std::string& command) {
-    static const std::string ft_prefix = "ft.";
-    static const std::string ft_search_suffix = "search";
-    static const std::string ft_aggregate_suffix = "aggregate";
-    static const std::string ft_tagvals_suffix = "tagvals";
-
-    if (command.size() < 3 || std::tolower(command[0]) != 'f' || std::tolower(command[1]) != 't' || command[2] != '.') {
-        return "";
-    }
-
-    const auto ft_cmd = command.substr(3, command.size());
-
-    if (equalsIgnoreCase(ft_cmd, ft_search_suffix)) {
-        return FT_SEARCH_CMD;
-    }
-    if (equalsIgnoreCase(ft_cmd, ft_aggregate_suffix)) {
-        return FT_AGGREGATE_CMD;
-    }
-    if (equalsIgnoreCase(ft_cmd, ft_tagvals_suffix)) {
-        return FT_TAGVALS_CMS;
-    }
-    return "";
-}
-
 std::string EscapeTSLabelValue(const std::string& label_value) {
     if (label_value.empty()) {
         return "\"\"";

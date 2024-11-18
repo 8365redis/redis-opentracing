@@ -17,12 +17,13 @@ COPY . .
 
 RUN make DEBUG=1
 
-FROM redis/redis-stack:latest
+FROM redis/redis-stack:7.4.0-v0
 
 RUN apt-get update && apt-get install -y  \
     gdbserver \
     gdb  \
     gcc \
+    g++ \
     make  \
     clang \
     clang-tools \

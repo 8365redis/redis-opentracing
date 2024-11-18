@@ -6,7 +6,6 @@
 #include "redismodule.h"
 #include "misc_utils.h"
 
-std::string ParseFtCommand(const std::string& command);
 std::string ConcatArgs(RedisModuleString **argv, int argc);
 std::string EscapeTSLabelValue(const std::string& label_value);
 
