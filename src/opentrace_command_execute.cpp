@@ -74,14 +74,6 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, in
         }
     }
 
-    if (module_config.Get_Parse_Ft_Queries()) {
-        const std::string ft_query_cmd = ParseFtCommand(redis_command);
-        if (!ft_query_cmd.empty()) {
-            index_name = RedisModule_StringPtrLen(argv[cmd_args_idx], nullptr);  // Assuming the index name is the next argument
-            command_type = ft_query_cmd;
-        }
-    }
-
     RedisModuleCallReply *reply = nullptr;
     if(is_cct_command){
         reply = RedisModule_Call(ctx, redis_command.c_str(), "v",
@@ -113,7 +105,7 @@ int TRACE_Execute_RedisCommand(RedisModuleCtx *ctx, RedisModuleString **argv, in
     std::map<std::string, std::string> tags = {
         {CLIENT_KEY, client_id},
         {INDEX_NAME_KEY, index_name},
-        {COMMAND_TYPE_KEY, command_type}
+        {COMMAND_TYPE_KEY, redis_command}
     };
 
     std::string module_version = VersionManager::GetInstance().Get_Module_Version_Str();
