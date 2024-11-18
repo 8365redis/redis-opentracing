@@ -23,4 +23,6 @@ const std::string LABEL_COMMA_REPLACEMENT = "[c]";
 const std::string LABEL_OPEN_PARANTHESIS_REPLACEMENT = "[op]";
 const std::string LABEL_CLOSED_PARANTHESIS_REPLACEMENT = "[cp]";
 
+const std::string CLIENTNAME_KEY = "CLIENTNAME";
+
 #endif //OPT_MODULE_CONSTANTS_H
