@@ -139,12 +139,12 @@ bool Monitoring_Manager::Add_Metric(RedisModuleCtx *ctx, unsigned long long metr
     RedisModuleString* stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, stream_name, REDISMODULE_WRITE);
 
-    // Add entry to the stream
-    RedisModuleString* xadd_fields[2];
-    xadd_fields[0] = RedisModule_CreateString(ctx, OPENTRACING_METRIC_KEY_NAME.c_str(), OPENTRACING_METRIC_KEY_NAME.length());
-    xadd_fields[1] = RedisModule_CreateString(ctx, metric_str.c_str(), metric_str.length());
+    const int stream_write_size_total = 2; // metric name + metric data
+    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * stream_write_size_total);
+    xadd_params[0] = RedisModule_CreateString(ctx, OPENTRACING_METRIC_KEY_NAME.c_str(), OPENTRACING_METRIC_KEY_NAME.length());
+    xadd_params[1] = RedisModule_CreateString(ctx, metric_str.c_str(), metric_str.length());
 
-    int stream_add_resp = RedisModule_StreamAdd(stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_fields, 1);
+    int stream_add_resp = RedisModule_StreamAdd(stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, stream_write_size_total / 2);
     if (stream_add_resp != REDISMODULE_OK) {
         logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Add_Metric failed to add to the stream.");
         return false;
