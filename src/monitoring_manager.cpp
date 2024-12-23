@@ -1,6 +1,7 @@
 #include "monitoring_manager.h"
 #include <iostream>
 #include <sstream>
+#include <algorithm>
 
 #include "json/json.hpp"
 
@@ -94,7 +95,6 @@ void Monitoring_Manager::Init(int monitoring_stream_cap, void(*logger)(RedisModu
 
 bool Monitoring_Manager::Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, const std::string& name, double value, const std::string& value_type, const std::string& module, const std::string& version, const std::string& command, const std::map<std::string, std::string>& tags) {
     trim_counter++;
-
     if (ctx == nullptr) {
         logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Add_Metric failed, context is invalid.");
         return false;
@@ -105,30 +105,51 @@ bool Monitoring_Manager::Add_Metric(RedisModuleCtx *ctx, unsigned long long metr
         return false;
     }
 
+    if (trim_counter >= std::min(monitoring_stream_cap, TRIM_BUFFER_SIZE)) {
+        // Check stream length
+        RedisModuleCallReply *reply = RedisModule_Call(ctx, "XLEN", "c", OPENTRACING_STREAM_NAME.c_str());
+        if (reply == nullptr || RedisModule_CallReplyType(reply) != REDISMODULE_REPLY_INTEGER) {
+            logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Failed to get stream length.");
+            RedisModule_FreeCallReply(reply);
+            return false;
+        }
+
+        long long stream_length = RedisModule_CallReplyInteger(reply);
+        RedisModule_FreeCallReply(reply);
+
+        if (stream_length >= monitoring_stream_cap) {
+            // Generate new stream name for the old stream
+            unsigned long long timestamp = Get_Epoch_Time();
+            std::string new_stream_name = "OPENTRACING_" + std::to_string(timestamp);
+
+            // Rename the old stream
+            reply = RedisModule_Call(ctx, "RENAME", "cc", OPENTRACING_STREAM_NAME.c_str(), new_stream_name.c_str());
+            if (reply == nullptr || RedisModule_CallReplyType(reply) == REDISMODULE_REPLY_ERROR) {
+                logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Failed to rename the stream.");
+                return false;
+            }
+            RedisModule_FreeCallReply(reply);
+        }
+        trim_counter = 0;
+    }
+
     // Generate the JSON string using the function
     std::string metric_str = Create_Metric_Json_String_Stream(version, metric_ts, module, command, tags, name, value, value_type);
 
-    const int stream_write_size_total = 2; // metric name + metric data
     RedisModuleString* stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
     RedisModuleKey *stream_key = RedisModule_OpenKey(ctx, stream_name, REDISMODULE_WRITE);
-    RedisModuleString **xadd_params = (RedisModuleString **) RedisModule_Alloc(sizeof(RedisModuleString *) * stream_write_size_total);
 
-    xadd_params[0] = RedisModule_CreateString(ctx, OPENTRACING_METRIC_KEY_NAME.c_str(), OPENTRACING_METRIC_KEY_NAME.length());
-    xadd_params[1] = RedisModule_CreateString(ctx, metric_str.c_str(), metric_str.length());
+    // Add entry to the stream
+    RedisModuleString* xadd_fields[2];
+    xadd_fields[0] = RedisModule_CreateString(ctx, OPENTRACING_METRIC_KEY_NAME.c_str(), OPENTRACING_METRIC_KEY_NAME.length());
+    xadd_fields[1] = RedisModule_CreateString(ctx, metric_str.c_str(), metric_str.length());
 
-    int stream_add_resp = RedisModule_StreamAdd(stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_params, stream_write_size_total / 2);
+    int stream_add_resp = RedisModule_StreamAdd(stream_key, REDISMODULE_STREAM_ADD_AUTOID, NULL, xadd_fields, 1);
     if (stream_add_resp != REDISMODULE_OK) {
         logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Add_Metric failed to add to the stream.");
         return false;
     }
 
-    if (trim_counter > TRIM_BUFFER_SIZE) {
-        logger(ctx, REDISMODULE_LOGLEVEL_WARNING, "Add_Metric has reached to cap , will trim the stream.");
-        RedisModuleString* mon_stream_name = RedisModule_CreateString(ctx, OPENTRACING_STREAM_NAME.c_str(), OPENTRACING_STREAM_NAME.length());
-        RedisModuleKey *mon_stream_key = RedisModule_OpenKey(ctx, mon_stream_name, REDISMODULE_WRITE);
-        RedisModule_StreamTrimByLength(mon_stream_key, REDISMODULE_STREAM_TRIM_APPROX, monitoring_stream_cap);
-        trim_counter = 0;
-    }
     return true;
 }
 
