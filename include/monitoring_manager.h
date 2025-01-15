@@ -33,7 +33,7 @@ class Monitoring_Manager {
 public:
     static Monitoring_Manager& Get_Instance();
 
-    void Init(int monitoring_stream_cap, void(*logger)(RedisModuleCtx*, const char *, const std::string&));
+    void Init(int monitoring_stream_cap, int trim_buffer_size, void(*logger)(RedisModuleCtx*, const char *, const std::string&));
 
     bool Add_Metric(RedisModuleCtx *ctx, unsigned long long metric_ts, const std::string& name, double value, const std::string& value_type, const std::string& module, const std::string& version, const std::string& command, const std::map<std::string, std::string>& tags);
 
@@ -50,6 +50,7 @@ private:
     void(*logger)(RedisModuleCtx*, const char *, const std::string&) = [](RedisModuleCtx*, const char*, const std::string&) {};
     int trim_counter = 0;
     int monitoring_stream_cap = 100000;
+    int trim_buffer_size = 10000;
 };
 
 #endif // MONITORING_H

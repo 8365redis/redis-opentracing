@@ -87,7 +87,7 @@ Monitoring_Manager& Monitoring_Manager::Get_Instance() {
     return instance;
 }
 
-void Monitoring_Manager::Init(int monitoring_stream_cap, void(*logger)(RedisModuleCtx*, const char *, const std::string&)) {
+void Monitoring_Manager::Init(int monitoring_stream_cap, int monitoring_buffer_size, void(*logger)(RedisModuleCtx*, const char *, const std::string&)) {
     this->monitoring_stream_cap = monitoring_stream_cap;
     this->logger = logger ? logger : [](RedisModuleCtx*, const char*, const std::string&) {};
 }

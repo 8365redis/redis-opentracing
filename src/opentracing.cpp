@@ -48,7 +48,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
     auto logger_lambda = [](RedisModuleCtx* ctx, const char* level, const std::string& message) {
         LOG(ctx, level, message);
     };
-    Monitoring_Manager::Get_Instance().Init(module_config.Get_Monitoring_Stream_Cap(), logger_lambda);
+    Monitoring_Manager::Get_Instance().Init(module_config.Get_Monitoring_Stream_Cap(), module_config.Get_Monitoring_Trim_Buffer_Size(), logger_lambda);
 
     return REDISMODULE_OK;
 }
