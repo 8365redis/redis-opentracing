@@ -47,5 +47,16 @@ void Module_Config::Read_Module_Config(RedisModuleCtx *ctx, const std::string& c
         } else {
             LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [MONITORING_STREAM_CAP_CONFIG] is not found in config file using default.");
         }
+
+        if(!config[DEFAULT_CONFIG_SECTION][MONITORING_BUFFER_SIZE_CONFIG].empty() ) {
+            try{
+                monitoring_trim_buffer_size = std::stoi(config[DEFAULT_CONFIG_SECTION][MONITORING_BUFFER_SIZE_CONFIG]);
+            } catch (std::invalid_argument const& _) {
+                LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value " + MONITORING_BUFFER_SIZE_CONFIG  + " has failed to read value.");
+            }
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [MONITORING_BUFFER_SIZE_CONFIG] : " + std::to_string(monitoring_trim_buffer_size));
+        } else {
+            LOG(ctx, REDISMODULE_LOGLEVEL_WARNING , "Module config value [MONITORING_BUFFER_SIZE_CONFIG] is not found in config file using default.");
+        }
     }
 }
